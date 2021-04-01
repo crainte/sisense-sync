@@ -56,7 +56,7 @@ class Backup():
         if self.repo.index.diff('HEAD'):
             logger.info(f"Commiting {self.storage}")
             self.repo.index.commit(f"Updating resources for {self.env}")
-            repo.remotes.origin.push()
+            self.repo.remotes.origin.push()
         else:
             logger.info(f"No changes detected")
 
