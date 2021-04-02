@@ -3,6 +3,7 @@ from loguru import logger
 
 import os
 import git
+import json
 import shutil
 
 
@@ -34,6 +35,15 @@ class Backup():
         self.models = self.client.get_data_models()
         return self.models
 
+    def _pretty(self, file):
+        logger.info(f"Formatting {file}")
+        with open(file, "r+") as f:
+            data = json.load(f)
+            f.seek(0)
+            json.dump(data, f, indent=4)
+            f.truncate()
+            f.close()
+
     def save_models(self):
         os.makedirs(os.path.join(self.storage, f"models/{self.env}"), exist_ok=True)
 
@@ -41,6 +51,7 @@ class Backup():
             oid = model.get_oid()
             model.export_to_smodel(f"work/models/{self.env}/{oid}.smodel")
             logger.opt(colors=True).success(f"Downloaded model: <white>{oid}</white>")
+            self._pretty(f"work/models/{self.env}/{oid}.smodel")
 
     def save_dashboards(self):
         os.makedirs(os.path.join(self.storage, f"dashboards/{self.env}"), exist_ok=True)
@@ -49,6 +60,7 @@ class Backup():
             oid = dashboard.get_oid()
             dashboard.export_to_dash(f"work/dashboards/{self.env}/{oid}.dash")
             logger.opt(colors=True).success(f"Downloaded dashboard: <white>{oid}</white>")
+            self._pretty(f"work/dashboards/{self.env}/{oid}.dash")
 
     def commit(self):
         self.repo.index.add([f"dashboards/{self.env}"])
@@ -59,7 +71,6 @@ class Backup():
             self.repo.remotes.origin.push()
         else:
             logger.info(f"No changes detected")
-
 
 
 
