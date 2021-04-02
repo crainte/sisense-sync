@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sisense-sync"
-version = "0.2.2"
+version = "0.3.0"
 description = ""
 authors = ["Chris Alexander <crainte@hybridoptix.net>"]
 
