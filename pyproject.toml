@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "sisense-sync"
-version = "0.1.0"
+version = "0.1.1-alpha.0"
 description = ""
 authors = ["Chris Alexander <crainte@hybridoptix.net>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pysensesdk = {git = "https://github.com/crainte/PySense"}
 GitPython = "^3.1.14"
 loguru = "^0.5.3"
+PySenseSDK = "^1.0.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
