@@ -23,7 +23,10 @@ ENV PYTHONUNBUFFERED=1 \
 
     ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 
+RUN addgroup sisense \
+    && adduser -h /app -D sisense -G sisense
 
+###### BUILD
 FROM base as build
 
 RUN apk update \
@@ -44,8 +47,17 @@ COPY sisense_sync ./sisense_sync
 RUN poetry install --no-dev \
     && apk del --purge alpine-sdk libffi-dev openssl-dev cargo
 
+###### FINAL
 FROM base as final
-COPY --from=build $PYSETUP_PATH $PYSETUP_PATH
+
 WORKDIR /app
-USER nobody
+
+RUN apk update \
+    && apk upgrade --no-cache \
+    && apk add --no-cache git openssh
+
+COPY --from=build $PYSETUP_PATH $PYSETUP_PATH
+
+USER sisense
+
 CMD ["sisense-download"]

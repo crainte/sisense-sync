@@ -57,12 +57,12 @@ class Backup():
         for model in self._get_models():
             oid = model.get_oid()
             try:
-                model.export_to_smodel(f"work/models/{self.env}/{oid}.smodel")
+                model.export_to_smodel(f"{self.storage}/models/{self.env}/{oid}.smodel")
             except Exception as e:
                 logger.exception(f"Failed to export {self.env}/{oid}.smodel, Reason: {e}")
                 raise
             logger.opt(colors=True).success(f"Downloaded model: <white>{oid}</white>")
-            self._pretty(f"work/models/{self.env}/{oid}.smodel")
+            self._pretty(f"{self.storage}/models/{self.env}/{oid}.smodel")
 
     def save_dashboards(self):
         os.makedirs(os.path.join(self.storage, f"dashboards/{self.env}"), exist_ok=True)
@@ -70,12 +70,12 @@ class Backup():
         for dashboard in self._get_dashboards():
             oid = dashboard.get_oid()
             try:
-                dashboard.export_to_dash(f"work/dashboards/{self.env}/{oid}.dash")
+                dashboard.export_to_dash(f"{self.storage}/dashboards/{self.env}/{oid}.dash")
             except Exception as e:
                 logger.exception(f"Failed to export {self.env}/{oid}.dash, Reason: {e}")
                 raise
             logger.opt(colors=True).success(f"Downloaded dashboard: <white>{oid}</white>")
-            self._pretty(f"work/dashboards/{self.env}/{oid}.dash")
+            self._pretty(f"{self.storage}/dashboards/{self.env}/{oid}.dash")
 
     def commit(self):
         self.repo.index.add([f"dashboards/{self.env}"])
