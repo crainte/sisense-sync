@@ -26,7 +26,8 @@ class Backup():
                 raise
 
         try:
-            self.repo = git.Repo.clone_from(self.remote, self.storage, multi_options=['--depth 1'], branch="main")
+            self.repo = git.Repo.clone_from(self.remote, self.storage, multi_options=['--depth 1'])
+            self.repo.git.checkout('HEAD', b=self.env)
         except Exception as e:
             logger.exception(f"Failed to clone repo {self.remote}, Reason: {e}")
             raise
@@ -40,7 +41,6 @@ class Backup():
         return self.models
 
     def _pretty(self, file):
-        logger.info(f"Formatting {file}")
         try:
             with open(file, "r+") as f:
                 data = json.load(f)
@@ -52,38 +52,42 @@ class Backup():
             logger.exception(f"Failed to format file {file}, Reason: {e}")
 
     def save_models(self):
-        os.makedirs(os.path.join(self.storage, f"models/{self.env}"), exist_ok=True)
+        os.makedirs(os.path.join(self.storage, f"models"), exist_ok=True)
 
         for model in self._get_models():
             oid = model.get_oid()
             try:
-                model.export_to_smodel(f"{self.storage}/models/{self.env}/{oid}.smodel")
+                model.export_to_smodel(f"{self.storage}/models/{oid}.smodel")
             except Exception as e:
-                logger.exception(f"Failed to export {self.env}/{oid}.smodel, Reason: {e}")
+                logger.exception(f"Failed to export {oid}.smodel, Reason: {e}")
                 raise
             logger.opt(colors=True).success(f"Downloaded model: <white>{oid}</white>")
-            self._pretty(f"{self.storage}/models/{self.env}/{oid}.smodel")
+            self._pretty(f"{self.storage}/models/{oid}.smodel")
 
     def save_dashboards(self):
-        os.makedirs(os.path.join(self.storage, f"dashboards/{self.env}"), exist_ok=True)
+        os.makedirs(os.path.join(self.storage, f"dashboards"), exist_ok=True)
 
         for dashboard in self._get_dashboards():
             oid = dashboard.get_oid()
             try:
-                dashboard.export_to_dash(f"{self.storage}/dashboards/{self.env}/{oid}.dash")
+                dashboard.export_to_dash(f"{self.storage}/dashboards/{oid}.dash")
             except Exception as e:
-                logger.exception(f"Failed to export {self.env}/{oid}.dash, Reason: {e}")
+                logger.exception(f"Failed to export {oid}.dash, Reason: {e}")
                 raise
             logger.opt(colors=True).success(f"Downloaded dashboard: <white>{oid}</white>")
-            self._pretty(f"{self.storage}/dashboards/{self.env}/{oid}.dash")
+            self._pretty(f"{self.storage}/dashboards/{oid}.dash")
 
     def commit(self):
-        self.repo.index.add([f"dashboards/{self.env}"])
-        self.repo.index.add([f"models/{self.env}"])
+        self.repo.index.add([f"dashboards/"])
+        self.repo.index.add([f"models/"])
         if self.repo.index.diff('HEAD'):
             try:
                 self.repo.index.commit(f"Updating resources for {self.env}")
-                self.repo.remotes.origin.push()
+                # Set this branch to track remote
+                ref = git.RemoteReference(self.repo, f"refs/remotes/origin/{self.env}")
+                self.repo.head.reference.set_tracking_branch(ref)
+                origin = self.repo.remote()
+                origin.push()
                 logger.success("Changes commited")
             except Exception as e:
                 logger.exception(f"Failed to commit changes, Reason: {e}")
