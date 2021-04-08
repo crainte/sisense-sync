@@ -26,11 +26,31 @@ class Backup():
                 raise
 
         try:
-            self.repo = git.Repo.clone_from(self.remote, self.storage, multi_options=['--depth 1'])
-            self.repo.git.checkout('HEAD', b=self.env)
+            # By default shallow only pulls the tip of a single branch, we require
+            # all defined remote branches so we need the --no-single-branch flag
+            self.repo = git.Repo.clone_from(self.remote, self.storage, multi_options=['--depth 1','--no-single-branch'])
         except Exception as e:
             logger.exception(f"Failed to clone repo {self.remote}, Reason: {e}")
             raise
+
+        try:
+            # We need to figure out if this is a new branch, or we're working with
+            # a pre-existing one
+            self.repo.git.checkout(self.env)
+        except Exception as e:
+            logger.warning(f"Failed to checkout branch {self.env}")
+            try:
+                # No remote, checkout orphan
+                self.repo.git.checkout(["--orphan", self.env])
+                # Clean staging area
+                self.repo.git.rm(".", ["-rf"])
+                # Create initial empty commit to avoid reference issues
+                self.repo.git.commit(["--allow-empty","-m","[bot] Initial Commit"])
+                logger.success(f"Created clean orphan branch {self.env}")
+            except Exception as e:
+                logger.exception(f"Failed to create new branch {self.env}, Reason: {e}")
+                raise
+
 
     def _get_dashboards(self):
         self.dashboards = self.client.get_dashboards()
@@ -78,17 +98,20 @@ class Backup():
             self._pretty(f"{self.storage}/dashboards/{oid}.dash")
 
     def commit(self):
-        self.repo.index.add([f"dashboards/"])
-        self.repo.index.add([f"models/"])
+        ref = git.RemoteReference(self.repo, f"refs/remotes/origin/{self.env}")
+        self.repo.head.reference.set_tracking_branch(ref)
+        # Add directories
+        self.repo.index.add([f"{self.storage}/dashboards/"])
+        self.repo.index.add([f"{self.storage}/models/"])
         if self.repo.index.diff('HEAD'):
             try:
-                self.repo.index.commit(f"Updating resources for {self.env}")
-                # Set this branch to track remote
-                ref = git.RemoteReference(self.repo, f"refs/remotes/origin/{self.env}")
-                self.repo.head.reference.set_tracking_branch(ref)
+                self.repo.index.commit(f"[bot] Updating resources")
                 origin = self.repo.remote()
-                origin.push()
-                logger.success("Changes commited")
+                info = origin.push(self.env)[0]
+                if "rejected" in info.summary:
+                    logger.error(f"Failed: {info.summary}")
+                else:
+                    logger.success(info.summary)
             except Exception as e:
                 logger.exception(f"Failed to commit changes, Reason: {e}")
                 raise
