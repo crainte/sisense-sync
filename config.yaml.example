@@ -1,6 +1,6 @@
 username: EXAMPLE@EXAMPLE.COMM
 password: PASSWORD
 version: Linux | Windows
-env: EXAMPLE
 repo: git@github.com:EXAMPLE/repo.git
+branch: EXAMPLE
 host: https://EXAMPLE.sisense.com

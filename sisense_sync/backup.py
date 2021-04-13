@@ -7,16 +7,16 @@ import json
 import shutil
 
 
-class Backup():
+class Backup:
 
     def __init__(self):
         self.client = client
         self.storage = os.path.join(os.getcwd(), 'work')
         self.remote = client.param_dict['repo']
-        self.env = client.param_dict['env']
-        self._clean_checkout()
+        self.branch = client.param_dict['branch']
+        self.__clean_checkout()
 
-    def _clean_checkout(self):
+    def __clean_checkout(self):
         if os.path.isdir(self.storage):
             try:
                 logger.warning(f"Cleaning {self.storage}")
@@ -36,45 +36,45 @@ class Backup():
         try:
             # We need to figure out if this is a new branch, or we're working with
             # a pre-existing one
-            self.repo.git.checkout(self.env)
+            self.repo.git.checkout(self.branch)
         except Exception as e:
-            logger.warning(f"Failed to checkout branch {self.env}")
+            logger.warning(f"Failed to checkout branch {self.branch}")
             try:
                 # No remote, checkout orphan
-                self.repo.git.checkout(["--orphan", self.env])
+                self.repo.git.checkout(["--orphan", self.branch])
                 # Clean staging area
                 self.repo.git.rm(".", ["-rf"])
                 # Create initial empty commit to avoid reference issues
                 self.repo.git.commit(["--allow-empty","-m","[bot] Initial Commit"])
-                logger.success(f"Created clean orphan branch {self.env}")
+                logger.success(f"Created clean orphan branch {self.branch}")
             except Exception as e:
-                logger.exception(f"Failed to create new branch {self.env}, Reason: {e}")
+                logger.exception(f"Failed to create new branch {self.branch}, Reason: {e}")
                 raise
 
 
-    def _get_dashboards(self):
+    def __get_dashboards(self):
         self.dashboards = self.client.get_dashboards()
         return self.dashboards
 
-    def _get_models(self):
+    def __get_models(self):
         self.models = self.client.get_data_models()
         return self.models
 
-    def _pretty(self, file):
+    def __pretty(self, file):
         try:
             with open(file, "r+") as f:
                 data = json.load(f)
                 f.seek(0)
                 json.dump(data, f, indent=4)
                 f.truncate()
-                f.close()
         except Exception as e:
             logger.exception(f"Failed to format file {file}, Reason: {e}")
 
     def save_models(self):
+        shutil.rmtree(os.path.join(self.storage, f"models"), ignore_errors=True)
         os.makedirs(os.path.join(self.storage, f"models"), exist_ok=True)
 
-        for model in self._get_models():
+        for model in self.__get_models():
             oid = model.get_oid()
             try:
                 model.export_to_smodel(f"{self.storage}/models/{oid}.smodel")
@@ -82,12 +82,13 @@ class Backup():
                 logger.exception(f"Failed to export {oid}.smodel, Reason: {e}")
                 raise
             logger.opt(colors=True).success(f"Downloaded model: <white>{oid}</white>")
-            self._pretty(f"{self.storage}/models/{oid}.smodel")
+            self.__pretty(f"{self.storage}/models/{oid}.smodel")
 
     def save_dashboards(self):
+        shutil.rmtree(os.path.join(self.storage, f"dashboards"), ignore_errors=True)
         os.makedirs(os.path.join(self.storage, f"dashboards"), exist_ok=True)
 
-        for dashboard in self._get_dashboards():
+        for dashboard in self.__get_dashboards():
             oid = dashboard.get_oid()
             try:
                 dashboard.export_to_dash(f"{self.storage}/dashboards/{oid}.dash")
@@ -95,10 +96,10 @@ class Backup():
                 logger.exception(f"Failed to export {oid}.dash, Reason: {e}")
                 raise
             logger.opt(colors=True).success(f"Downloaded dashboard: <white>{oid}</white>")
-            self._pretty(f"{self.storage}/dashboards/{oid}.dash")
+            self.__pretty(f"{self.storage}/dashboards/{oid}.dash")
 
     def commit(self):
-        ref = git.RemoteReference(self.repo, f"refs/remotes/origin/{self.env}")
+        ref = git.RemoteReference(self.repo, f"refs/remotes/origin/{self.branch}")
         self.repo.head.reference.set_tracking_branch(ref)
         # Add directories
         self.repo.index.add([f"{self.storage}/dashboards/"])
@@ -107,7 +108,7 @@ class Backup():
             try:
                 self.repo.index.commit(f"[bot] Updating resources")
                 origin = self.repo.remote()
-                info = origin.push(self.env)[0]
+                info = origin.push(self.branch)[0]
                 if "rejected" in info.summary:
                     logger.error(f"Failed: {info.summary}")
                 else:
@@ -117,6 +118,3 @@ class Backup():
                 raise
         else:
             logger.info(f"No changes detected")
-
-
-backup = Backup()
