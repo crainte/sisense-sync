@@ -1,5 +1,4 @@
 from sisense_sync.client import client
-from sisense_sync.args import args
 from loguru import logger
 from pathlib import Path
 from PySense import PySenseDataModel
@@ -10,7 +9,7 @@ import json
 
 class Restore:
 
-    def __init__(self):
+    def __init__(self, args):
         self.client = client
         self.version = client.param_dict['version']
         self.__handle_args(args)

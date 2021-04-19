@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sisense-sync"
-version = "0.5.0"
+version = "1.0.0"
 description = ""
 authors = ["Chris Alexander <crainte@hybridoptix.net>"]
 
@@ -14,8 +14,7 @@ PySenseSDK = "^1.0.2"
 pytest = "^5.2"
 
 [tool.poetry.scripts]
-sisense-download = "sisense_sync.download:main"
-sisense-upload = "sisense_sync.upload:main"
+sisense = "sisense_sync.actions:main"
 
 [build-system]
 requires = ["poetry>=0.12"]

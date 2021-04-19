@@ -9,12 +9,16 @@ import shutil
 
 class Backup:
 
-    def __init__(self):
+    def __init__(self, args):
         self.client = client
         self.storage = os.path.join(os.getcwd(), 'work')
         self.remote = client.param_dict['repo']
         self.branch = client.param_dict['branch']
+        self.no_commit = args.no_commit
         self.__clean_checkout()
+        self.__save_dashboards()
+        self.__save_models()
+        self.__commit()
 
     def __clean_checkout(self):
         if os.path.isdir(self.storage):
@@ -70,7 +74,7 @@ class Backup:
         except Exception as e:
             logger.exception(f"Failed to format file {file}, Reason: {e}")
 
-    def save_models(self):
+    def __save_models(self):
         shutil.rmtree(os.path.join(self.storage, f"models"), ignore_errors=True)
         os.makedirs(os.path.join(self.storage, f"models"), exist_ok=True)
 
@@ -84,7 +88,7 @@ class Backup:
             logger.opt(colors=True).success(f"Downloaded model: <white>{oid}</white>")
             self.__pretty(f"{self.storage}/models/{oid}.smodel")
 
-    def save_dashboards(self):
+    def __save_dashboards(self):
         shutil.rmtree(os.path.join(self.storage, f"dashboards"), ignore_errors=True)
         os.makedirs(os.path.join(self.storage, f"dashboards"), exist_ok=True)
 
@@ -98,12 +102,15 @@ class Backup:
             logger.opt(colors=True).success(f"Downloaded dashboard: <white>{oid}</white>")
             self.__pretty(f"{self.storage}/dashboards/{oid}.dash")
 
-    def commit(self):
+    def __commit(self):
         ref = git.RemoteReference(self.repo, f"refs/remotes/origin/{self.branch}")
         self.repo.head.reference.set_tracking_branch(ref)
         # Add directories
         self.repo.index.add([f"{self.storage}/dashboards/"])
         self.repo.index.add([f"{self.storage}/models/"])
+        if self.no_commit:
+            logger.warning("Not commiting changes")
+            return
         if self.repo.index.diff('HEAD'):
             try:
                 self.repo.index.commit(f"[bot] Updating resources")
