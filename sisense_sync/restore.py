@@ -15,11 +15,7 @@ class Restore:
         self.__handle_args(args)
 
     def __handle_args(self, arg):
-        if arg.title:
-            self.title = arg.title
-        else:
-            self.title = None
-
+        self.new = arg.new
         if arg.connect:
             try:
                 with open(arg.file, 'r+') as f:
@@ -64,9 +60,8 @@ class Restore:
             fake['oid'] = Path(file).stem
             target = PySenseDataModel.DataModel(self.client, fake)
 
-            if self.title:
-                # According to the Sisense API, if a target is provided
-                ret = self.client.import_schema(file, title=self.title)
+            if self.new:
+                ret = self.client.import_schema(file)
                 logger.success(f"Model {ret.get_oid()} uploaded. Title: '{ret.get_title()}'")
             else:
                 # update an existing model

@@ -15,7 +15,7 @@ download.set_defaults(func=Backup)
 
 upload = subparsers.add_parser('upload', help='Upload a dashboard or model')
 upload.add_argument('file', help='Dashboard or DataModel to upload')
-upload.add_argument('-t', '--title', dest='title', help='Update Title')
+upload.add_argument('-n', '--new', action='store_true', help='Create Model')
 upload.add_argument('-c', '--connection', dest='connect', help='Update Connection')
 upload.set_defaults(func=Restore)
 
