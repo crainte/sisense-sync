@@ -25,7 +25,7 @@ class Restore:
                 with open(arg.file, 'r+') as f:
                     data = json.load(f)
                     f.seek(0)
-                    if self.connect:
+                    if arg.connect:
                         logger.info("Updating connection parameters")
                         for dataset in data['datasets']:
                             logger.opt(colors=True).info(f"Replacing connection string: <blue>{dataset['connection']['parameters']}</blue>")
