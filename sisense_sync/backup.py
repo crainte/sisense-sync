@@ -105,9 +105,8 @@ class Backup:
     def __commit(self):
         ref = git.RemoteReference(self.repo, f"refs/remotes/origin/{self.branch}")
         self.repo.head.reference.set_tracking_branch(ref)
-        # Add directories
-        self.repo.index.add([f"{self.storage}/dashboards/"])
-        self.repo.index.add([f"{self.storage}/models/"])
+        # Use git directly to grab all additions and deletions
+        self.repo.git.add(all=True)
         if self.no_commit:
             logger.warning("Not commiting changes")
             return
