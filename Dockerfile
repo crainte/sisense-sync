@@ -60,4 +60,4 @@ COPY --from=build $PYSETUP_PATH $PYSETUP_PATH
 
 USER sisense
 
-CMD ["sisense download"]
+CMD ["sisense","download"]
