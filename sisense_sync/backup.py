@@ -84,7 +84,8 @@ class Backup:
                 model.export_to_smodel(f"{self.storage}/models/{oid}.smodel")
             except Exception as e:
                 logger.exception(f"Failed to export {oid}.smodel, Reason: {e}")
-                raise
+                continue
+                #raise
             logger.opt(colors=True).success(f"Downloaded model: <white>{oid}</white>")
             self.__pretty(f"{self.storage}/models/{oid}.smodel")
 
@@ -98,7 +99,8 @@ class Backup:
                 dashboard.export_to_dash(f"{self.storage}/dashboards/{oid}.dash")
             except Exception as e:
                 logger.exception(f"Failed to export {oid}.dash, Reason: {e}")
-                raise
+                continue
+                #raise
             logger.opt(colors=True).success(f"Downloaded dashboard: <white>{oid}</white>")
             self.__pretty(f"{self.storage}/dashboards/{oid}.dash")
 
